@@ -32,8 +32,8 @@ def train(opt, model):
 
     for cur_train_module in [0, 1, 2]:
         for epoch in range(opt.start_epoch, opt.num_epochs + opt.start_epoch):
-            loss_epoch = [0, 0, 0]
-            loss_updates = [1, 1, 1]
+            loss_epoch = 0
+            loss_updates = 1
 
             for step, (img, label) in enumerate(train_loader):
 
@@ -54,25 +54,20 @@ def train(opt, model):
                 loss, _ = model(img, n=cur_train_module)
                 loss = torch.mean(loss, 0)
 
-                if cur_train_module != 3:
-                    loss = loss[cur_train_module].unsqueeze(0)
+                cur_loss = loss[cur_train_module].unsqueeze(0)
 
-                for idx, cur_losses in enumerate(loss):
-                    model.zero_grad()
+                model.zero_grad()
 
-                    if idx == len(loss) - 1:
-                        cur_losses.backward()
-                    else:
-                        cur_losses.backward(retain_graph=True)
-                    optimizer[idx].step()
+                cur_loss.backward(retain_graph=True)
+                optimizer[cur_train_module].step()
 
-                    print_loss = cur_losses.item()
-                    if step % print_idx == 0:
-                        print("\t \t Loss: \t \t {:.4f}".format(print_loss))
-                    loss_epoch[idx] += print_loss
-                    loss_updates[idx] += 1
+                print_loss = cur_loss.item()
+                if step % print_idx == 0:
+                    print("\t \t Loss: \t \t {:.4f}".format(print_loss))
+                loss_epoch += print_loss
+                loss_updates += 1
 
-            logs.append_train_loss([x / loss_updates[idx] for idx, x in enumerate(loss_epoch)])
+            logs.append_train_loss([loss_epoch / loss_updates])
             logs.create_log(model, epoch=epoch, optimizer=optimizer)
 
 
