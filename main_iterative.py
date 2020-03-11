@@ -26,14 +26,12 @@ def load_model_and_optimizer(opt, num_GPU=None, reload_model=True):
 
 def train(opt, model):
     total_step = len(train_loader)
-
     starttime = time.time()
     print_idx = 100
-
     for cur_train_module in [0, 1, 2]:
         for epoch in range(opt.start_epoch, opt.num_epochs + opt.start_epoch):
-            loss_epoch = 0
-            loss_updates = 1
+            loss_epoch = [0, 0, 0]
+            loss_updates = [1, 1, 1]
 
             for step, (img, label) in enumerate(train_loader):
 
@@ -54,20 +52,24 @@ def train(opt, model):
                 loss, _ = model(img, n=cur_train_module)
                 loss = torch.mean(loss, 0)
 
-                cur_loss = loss[cur_train_module].unsqueeze(0)
+                loss = loss[cur_train_module].unsqueeze(0)
 
-                model.zero_grad()
+                for idx, cur_losses in enumerate(loss):
+                    model.zero_grad()
 
-                cur_loss.backward(retain_graph=True)
-                optimizer[cur_train_module].step()
+                    if idx == len(loss) - 1:
+                        cur_losses.backward()
+                    else:
+                        cur_losses.backward(retain_graph=True)
+                    optimizer[idx].step()
 
-                print_loss = cur_loss.item()
-                if step % print_idx == 0:
-                    print("\t \t Loss: \t \t {:.4f}".format(print_loss))
-                loss_epoch += print_loss
-                loss_updates += 1
+                    print_loss = cur_losses.item()
+                    if step % print_idx == 0:
+                        print("\t \t Loss: \t \t {:.4f}".format(print_loss))
+                    loss_epoch[idx] += print_loss
+                    loss_updates[idx] += 1
 
-            logs.append_train_loss([loss_epoch / loss_updates])
+            logs.append_train_loss([x / loss_updates[idx] for idx, x in enumerate(loss_epoch)])
             logs.create_log(model, epoch=epoch, optimizer=optimizer)
 
 

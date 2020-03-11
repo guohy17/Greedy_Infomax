@@ -28,7 +28,6 @@ class FullVisionModel(torch.nn.Module):
     def forward(self, x, n=3):
         model_input = x
 
-
         if self.opt.device.type != "cpu":
             cur_device = x.get_device()
         else:
@@ -36,7 +35,7 @@ class FullVisionModel(torch.nn.Module):
 
         loss = torch.ones(1, 3, device=cur_device)
 
-        for idx, module in enumerate(self.encoder):
+        for idx, module in enumerate(self.encoder[:n+1]):
             h, z, cur_loss = module(model_input)
             model_input = z.detach()
             loss[:, idx] = cur_loss
