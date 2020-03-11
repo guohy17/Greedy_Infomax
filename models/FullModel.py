@@ -36,7 +36,7 @@ class FullVisionModel(torch.nn.Module):
 
         loss = torch.ones(1, 3, device=cur_device)
 
-        for idx, module in enumerate(self.encoder[:n+1]):
+        for idx, module in enumerate(self.encoder):
             h, z, cur_loss = module(model_input)
             model_input = z.detach()
             loss[:, idx] = cur_loss
